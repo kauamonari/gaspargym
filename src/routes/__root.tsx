@@ -81,6 +81,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "FitDiet — Controle de dieta e macros" },
+      { name: "twitter:description", content: "Acompanhe calorias, proteínas, carboidratos e gorduras com um app fitness premium." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ca9cdd64-73b9-45df-b336-87d7d3cf1852/id-preview-7ea7563e--4aacdd29-6b1e-451d-bf03-7686d0504445.lovable.app-1779054016346.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/ca9cdd64-73b9-45df-b336-87d7d3cf1852/id-preview-7ea7563e--4aacdd29-6b1e-451d-bf03-7686d0504445.lovable.app-1779054016346.png" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
