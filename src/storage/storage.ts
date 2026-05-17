@@ -27,6 +27,16 @@ export const STORAGE_KEYS = {
   profile: "fitdiet:profile",
 } as const;
 
+export type MealType = "cafe_manha" | "almoco" | "cafe_tarde" | "janta" | "ceia";
+
+export const MEAL_TYPES: { id: MealType; label: string; emoji: string; hour: number }[] = [
+  { id: "cafe_manha", label: "Café da manhã", emoji: "☕", hour: 8 },
+  { id: "almoco", label: "Almoço", emoji: "🍽️", hour: 12 },
+  { id: "cafe_tarde", label: "Café da tarde", emoji: "🥐", hour: 16 },
+  { id: "janta", label: "Janta", emoji: "🍲", hour: 20 },
+  { id: "ceia", label: "Ceia", emoji: "🌙", hour: 22 },
+];
+
 export interface Meal {
   id: string;
   foodId: number;
@@ -36,6 +46,7 @@ export interface Meal {
   proteina: number;
   carbo: number;
   gordura: number;
+  mealType: MealType;
   date: string; // ISO
 }
 
