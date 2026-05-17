@@ -9,8 +9,26 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ProgressRouteImport } from './routes/progress'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as AddRouteImport } from './routes/add'
 import { Route as IndexRouteImport } from './routes/index'
 
+const ProgressRoute = ProgressRouteImport.update({
+  id: '/progress',
+  path: '/progress',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AddRoute = AddRouteImport.update({
+  id: '/add',
+  path: '/add',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +37,61 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/add': typeof AddRoute
+  '/profile': typeof ProfileRoute
+  '/progress': typeof ProgressRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/add': typeof AddRoute
+  '/profile': typeof ProfileRoute
+  '/progress': typeof ProgressRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/add': typeof AddRoute
+  '/profile': typeof ProfileRoute
+  '/progress': typeof ProgressRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/add' | '/profile' | '/progress'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/add' | '/profile' | '/progress'
+  id: '__root__' | '/' | '/add' | '/profile' | '/progress'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AddRoute: typeof AddRoute
+  ProfileRoute: typeof ProfileRoute
+  ProgressRoute: typeof ProgressRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/progress': {
+      id: '/progress'
+      path: '/progress'
+      fullPath: '/progress'
+      preLoaderRoute: typeof ProgressRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/add': {
+      id: '/add'
+      path: '/add'
+      fullPath: '/add'
+      preLoaderRoute: typeof AddRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,7 +104,20 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AddRoute: AddRoute,
+  ProfileRoute: ProfileRoute,
+  ProgressRoute: ProgressRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
