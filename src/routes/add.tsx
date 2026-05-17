@@ -1,13 +1,18 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { ArrowLeft, Search, Check } from "lucide-react";
+import { z } from "zod";
 import { FOODS, type Food } from "@/data/foods";
 import { SurfaceCard } from "@/components/SurfaceCard";
-import { STORAGE_KEYS, storage, type Meal } from "@/storage/storage";
+import { STORAGE_KEYS, storage, MEAL_TYPES, type Meal, type MealType } from "@/storage/storage";
 import { calcMealFromFood } from "@/utils/nutrition";
-import { Link } from "@tanstack/react-router";
+
+const searchSchema = z.object({
+  type: z.enum(["cafe_manha", "almoco", "cafe_tarde", "janta", "ceia"]).optional(),
+});
 
 export const Route = createFileRoute("/add")({
+  validateSearch: searchSchema,
   head: () => ({
     meta: [
       { title: "FitDiet — Adicionar refeição" },
@@ -17,8 +22,19 @@ export const Route = createFileRoute("/add")({
   component: AddMeal,
 });
 
+function defaultMealType(): MealType {
+  const h = new Date().getHours();
+  if (h < 10) return "cafe_manha";
+  if (h < 14) return "almoco";
+  if (h < 18) return "cafe_tarde";
+  if (h < 21) return "janta";
+  return "ceia";
+}
+
 function AddMeal() {
   const navigate = useNavigate();
+  const { type } = Route.useSearch();
+  const [mealType, setMealType] = useState<MealType>(type ?? defaultMealType());
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Food | null>(null);
   const [gramas, setGramas] = useState(100);
@@ -40,6 +56,7 @@ function AddMeal() {
       nome: selected.nome,
       gramas,
       ...preview,
+      mealType,
       date: new Date().toISOString(),
     };
     storage.set(STORAGE_KEYS.meals, [...meals, meal]);
@@ -55,8 +72,31 @@ function AddMeal() {
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <h1 className="font-display text-2xl font-bold">Adicionar refeição</h1>
+        <h1 className="font-display text-2xl font-bold">Adicionar alimento</h1>
       </header>
+
+      <div>
+        <p className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">Refeição</p>
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {MEAL_TYPES.map((t) => {
+            const active = t.id === mealType;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setMealType(t.id)}
+                className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-all ${
+                  active
+                    ? "border-primary bg-primary text-primary-foreground shadow-glow"
+                    : "border-border bg-card/60 text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <span>{t.emoji}</span>
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="relative">
         <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -102,7 +142,7 @@ function AddMeal() {
             onClick={add}
             className="shadow-glow flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-primary-foreground transition-transform active:scale-[0.98]"
           >
-            <Check className="h-5 w-5" /> Adicionar refeição
+            <Check className="h-5 w-5" /> Adicionar à {MEAL_TYPES.find((t) => t.id === mealType)?.label}
           </button>
         </SurfaceCard>
       )}
