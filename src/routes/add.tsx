@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { ArrowLeft, Search, Check } from "lucide-react";
+import { ArrowLeft, Search, Check, Zap, Apple } from "lucide-react";
 import { z } from "zod";
 import { FOODS, type Food } from "@/data/foods";
 import { SurfaceCard } from "@/components/SurfaceCard";
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/add")({
   head: () => ({
     meta: [
       { title: "FitDiet — Adicionar refeição" },
-      { name: "description", content: "Pesquise alimentos e registre suas refeições rapidamente." },
+      { name: "description", content: "Pesquise alimentos ou registre calorias extras manualmente." },
     ],
   }),
   component: AddMeal,
@@ -35,9 +35,20 @@ function AddMeal() {
   const navigate = useNavigate();
   const { type } = Route.useSearch();
   const [mealType, setMealType] = useState<MealType>(type ?? defaultMealType());
+  const [mode, setMode] = useState<"search" | "custom">("search");
+
+  // Search state
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Food | null>(null);
   const [gramas, setGramas] = useState(100);
+
+  // Custom state
+  const [customNome, setCustomNome] = useState("");
+  const [customCalorias, setCustomCalorias] = useState(0);
+  const [customProteina, setCustomProteina] = useState(0);
+  const [customCarbo, setCustomCarbo] = useState(0);
+  const [customGordura, setCustomGordura] = useState(0);
+  const [customGramas, setCustomGramas] = useState(100);
 
   const results = useMemo(() => {
     const n = q.trim().toLowerCase();
@@ -47,7 +58,7 @@ function AddMeal() {
 
   const preview = selected ? calcMealFromFood(selected, gramas || 0) : null;
 
-  function add() {
+  function addFromSearch() {
     if (!selected || !preview || gramas <= 0) return;
     const meals = storage.get<Meal[]>(STORAGE_KEYS.meals, []);
     const meal: Meal = {
@@ -58,6 +69,25 @@ function AddMeal() {
       ...preview,
       mealType,
       date: new Date().toISOString(),
+    };
+    storage.set(STORAGE_KEYS.meals, [...meals, meal]);
+    navigate({ to: "/" });
+  }
+
+  function addCustom() {
+    if (!customNome.trim() || customCalorias <= 0) return;
+    const meals = storage.get<Meal[]>(STORAGE_KEYS.meals, []);
+    const meal: Meal = {
+      id: crypto.randomUUID(),
+      nome: customNome.trim(),
+      gramas: customGramas || 100,
+      calorias: Math.round(customCalorias),
+      proteina: +(customProteina || 1),
+      carbo: +(customCarbo || 1),
+      gordura: +(customGordura || 1),
+      mealType,
+      date: new Date().toISOString(),
+      custom: true,
     };
     storage.set(STORAGE_KEYS.meals, [...meals, meal]);
     navigate({ to: "/" });
@@ -98,85 +128,193 @@ function AddMeal() {
         </div>
       </div>
 
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Pesquisar alimento…"
-          className="h-12 w-full rounded-2xl border border-border bg-card/60 pl-11 pr-4 text-sm outline-none ring-primary/40 backdrop-blur transition focus:ring-2"
-        />
+      {/* Mode switch */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setMode("search")}
+          className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all ${
+            mode === "search"
+              ? "border-primary bg-primary/10 text-primary shadow-glow"
+              : "border-border bg-card/60 text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Apple className="h-4 w-4" />
+          Buscar alimento
+        </button>
+        <button
+          onClick={() => setMode("custom")}
+          className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-all ${
+            mode === "custom"
+              ? "border-primary bg-primary/10 text-primary shadow-glow"
+              : "border-border bg-card/60 text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Zap className="h-4 w-4" />
+          Calorias extras
+        </button>
       </div>
 
-      {selected && preview && (
-        <SurfaceCard className="space-y-4 border-primary/40">
-          <div className="flex items-baseline justify-between">
-            <h2 className="font-display text-lg font-semibold">{selected.nome}</h2>
-            <button
-              onClick={() => setSelected(null)}
-              className="text-xs text-muted-foreground hover:text-foreground"
-            >
-              trocar
-            </button>
+      {mode === "search" ? (
+        <>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Pesquisar alimento…"
+              className="h-12 w-full rounded-2xl border border-border bg-card/60 pl-11 pr-4 text-sm outline-none ring-primary/40 backdrop-blur transition focus:ring-2"
+            />
           </div>
 
+          {selected && preview && (
+            <SurfaceCard className="space-y-4 border-primary/40">
+              <div className="flex items-baseline justify-between">
+                <h2 className="font-display text-lg font-semibold">{selected.nome}</h2>
+                <button
+                  onClick={() => setSelected(null)}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  trocar
+                </button>
+              </div>
+
+              <label className="block">
+                <span className="text-xs uppercase tracking-wider text-muted-foreground">Quantidade (g)</span>
+                <input
+                  type="number"
+                  min={1}
+                  value={gramas}
+                  onChange={(e) => setGramas(Math.max(0, +e.target.value || 0))}
+                  className="mt-1 h-12 w-full rounded-xl border border-border bg-background/60 px-4 font-display text-xl font-bold tabular-nums outline-none ring-primary/40 focus:ring-2"
+                />
+              </label>
+
+              <div className="grid grid-cols-4 gap-2">
+                <Stat label="kcal" value={preview.calorias} accent />
+                <Stat label="Prot" value={preview.proteina} suffix="g" />
+                <Stat label="Carb" value={preview.carbo} suffix="g" />
+                <Stat label="Gord" value={preview.gordura} suffix="g" />
+              </div>
+
+              <button
+                onClick={addFromSearch}
+                className="shadow-glow flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-primary-foreground transition-transform active:scale-[0.98]"
+              >
+                <Check className="h-5 w-5" /> Adicionar à {MEAL_TYPES.find((t) => t.id === mealType)?.label}
+              </button>
+            </SurfaceCard>
+          )}
+
+          <ul className="space-y-2">
+            {results.map((f) => (
+              <li key={f.id}>
+                <button
+                  onClick={() => {
+                    setSelected(f);
+                    setGramas(100);
+                  }}
+                  className="w-full text-left"
+                >
+                  <SurfaceCard
+                    className={`flex items-center justify-between p-4 transition-colors ${
+                      selected?.id === f.id ? "border-primary/60" : "hover:border-border"
+                    }`}
+                  >
+                    <div>
+                      <p className="font-semibold">{f.nome}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {f.calorias} kcal · P{f.proteina} · C{f.carbo} · G{f.gordura} / 100g
+                      </p>
+                    </div>
+                    <span className="text-xs text-muted-foreground">100g</span>
+                  </SurfaceCard>
+                </button>
+              </li>
+            ))}
+            {results.length === 0 && (
+              <p className="py-6 text-center text-sm text-muted-foreground">Nenhum alimento encontrado.</p>
+            )}
+          </ul>
+        </>
+      ) : (
+        <SurfaceCard className="space-y-4 border-primary/40">
+          <h2 className="font-display text-lg font-semibold">Calorias extras</h2>
+
           <label className="block">
-            <span className="text-xs uppercase tracking-wider text-muted-foreground">Quantidade (g)</span>
+            <span className="text-xs uppercase tracking-wider text-muted-foreground">Nome (opcional)</span>
             <input
-              type="number"
-              min={1}
-              value={gramas}
-              onChange={(e) => setGramas(Math.max(0, +e.target.value || 0))}
-              className="mt-1 h-12 w-full rounded-xl border border-border bg-background/60 px-4 font-display text-xl font-bold tabular-nums outline-none ring-primary/40 focus:ring-2"
+              value={customNome}
+              onChange={(e) => setCustomNome(e.target.value)}
+              placeholder="Ex: Porção de batata frita do restaurante"
+              className="mt-1 h-12 w-full rounded-xl border border-border bg-background/60 px-4 text-sm outline-none ring-primary/40 focus:ring-2"
             />
           </label>
 
-          <div className="grid grid-cols-4 gap-2">
-            <Stat label="kcal" value={preview.calorias} accent />
-            <Stat label="Prot" value={preview.proteina} suffix="g" />
-            <Stat label="Carb" value={preview.carbo} suffix="g" />
-            <Stat label="Gord" value={preview.gordura} suffix="g" />
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">Calorias</span>
+              <input
+                type="number"
+                min={0}
+                value={customCalorias}
+                onChange={(e) => setCustomCalorias(Math.max(0, +e.target.value || 0))}
+                className="mt-1 h-12 w-full rounded-xl border border-border bg-background/60 px-4 font-display text-lg font-bold tabular-nums outline-none ring-primary/40 focus:ring-2"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">Gramas</span>
+              <input
+                type="number"
+                min={0}
+                value={customGramas}
+                onChange={(e) => setCustomGramas(Math.max(0, +e.target.value || 0))}
+                className="mt-1 h-12 w-full rounded-xl border border-border bg-background/60 px-4 font-display text-lg font-bold tabular-nums outline-none ring-primary/40 focus:ring-2"
+              />
+            </label>
+          </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <label className="block">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">Proteína (g)</span>
+              <input
+                type="number"
+                min={1}
+                value={customProteina}
+                onChange={(e) => setCustomProteina(+e.target.value || 0)}
+                className="mt-1 h-12 w-full rounded-xl border border-border bg-background/60 px-4 font-display text-lg font-bold tabular-nums outline-none ring-primary/40 focus:ring-2"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">Carbo (g)</span>
+              <input
+                type="number"
+                min={1}
+                value={customCarbo}
+                onChange={(e) => setCustomCarbo(+e.target.value || 0)}
+                className="mt-1 h-12 w-full rounded-xl border border-border bg-background/60 px-4 font-display text-lg font-bold tabular-nums outline-none ring-primary/40 focus:ring-2"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">Gordura (g)</span>
+              <input
+                type="number"
+                min={1}
+                value={customGordura}
+                onChange={(e) => setCustomGordura(+e.target.value || 0)}
+                className="mt-1 h-12 w-full rounded-xl border border-border bg-background/60 px-4 font-display text-lg font-bold tabular-nums outline-none ring-primary/40 focus:ring-2"
+              />
+            </label>
           </div>
 
           <button
-            onClick={add}
-            className="shadow-glow flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-primary-foreground transition-transform active:scale-[0.98]"
+            onClick={addCustom}
+            disabled={!customNome.trim() || customCalorias <= 0}
+            className="shadow-glow flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-primary-foreground transition-transform active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
           >
             <Check className="h-5 w-5" /> Adicionar à {MEAL_TYPES.find((t) => t.id === mealType)?.label}
           </button>
         </SurfaceCard>
       )}
-
-      <ul className="space-y-2">
-        {results.map((f) => (
-          <li key={f.id}>
-            <button
-              onClick={() => {
-                setSelected(f);
-                setGramas(100);
-              }}
-              className="w-full text-left"
-            >
-              <SurfaceCard
-                className={`flex items-center justify-between p-4 transition-colors ${
-                  selected?.id === f.id ? "border-primary/60" : "hover:border-border"
-                }`}
-              >
-                <div>
-                  <p className="font-semibold">{f.nome}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {f.calorias} kcal · P{f.proteina} · C{f.carbo} · G{f.gordura} / 100g
-                  </p>
-                </div>
-                <span className="text-xs text-muted-foreground">100g</span>
-              </SurfaceCard>
-            </button>
-          </li>
-        ))}
-        {results.length === 0 && (
-          <p className="py-6 text-center text-sm text-muted-foreground">Nenhum alimento encontrado.</p>
-        )}
-      </ul>
     </div>
   );
 }

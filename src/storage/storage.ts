@@ -39,7 +39,7 @@ export const MEAL_TYPES: { id: MealType; label: string; emoji: string; hour: num
 
 export interface Meal {
   id: string;
-  foodId: number;
+  foodId?: number;
   nome: string;
   gramas: number;
   calorias: number;
@@ -48,6 +48,7 @@ export interface Meal {
   gordura: number;
   mealType: MealType;
   date: string; // ISO
+  custom?: boolean;
 }
 
 export interface WeightEntry {
