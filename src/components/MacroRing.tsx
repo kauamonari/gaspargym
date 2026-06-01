@@ -16,12 +16,6 @@ export function MacroRing({ value, goal, size = 200, stroke = 14, label = "kcal"
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <defs>
-          <linearGradient id="ring-gradient" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="oklch(0.85 0.19 142)" />
-            <stop offset="100%" stopColor="oklch(0.62 0.22 155)" />
-          </linearGradient>
-        </defs>
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -34,7 +28,7 @@ export function MacroRing({ value, goal, size = 200, stroke = 14, label = "kcal"
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="url(#ring-gradient)"
+          stroke="var(--color-primary)"
           strokeWidth={stroke}
           fill="none"
           strokeLinecap="round"

@@ -66,11 +66,10 @@ function Dashboard() {
       </header>
 
       <SurfaceCard className="relative overflow-hidden">
-        <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary/20 blur-3xl" />
         <div className="flex flex-col items-center">
           <MacroRing value={totals.calorias} goal={goals.calorias} />
           <div className="mt-4 flex items-center gap-2 rounded-full border border-border bg-background/40 px-4 py-1.5 text-sm">
-            <Flame className="h-4 w-4 text-primary" />
+            <Flame className="h-4 w-4 text-muted-foreground" />
             <span className="font-medium tabular-nums">{remaining}</span>
             <span className="text-muted-foreground">kcal restantes</span>
           </div>

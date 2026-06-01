@@ -39,50 +39,48 @@
   --font-display: "Sora", system-ui, sans-serif;
   --font-sans: "Inter", system-ui, sans-serif;
 
-  --shadow-glow: 0 0 32px -8px color-mix(in oklab, var(--primary) 60%, transparent);
-  --shadow-card: 0 4px 24px -8px oklch(0 0 0 / 0.5);
+  --shadow-card: 0 1px 0 0 oklch(1 0 0 / 0.04) inset, 0 8px 24px -16px oklch(0 0 0 / 0.6);
 
-  --gradient-primary: linear-gradient(135deg, oklch(0.78 0.18 145), oklch(0.62 0.22 155));
-  --gradient-card: linear-gradient(160deg, oklch(0.22 0.012 250), oklch(0.16 0.01 250));
-  --gradient-hero: radial-gradient(ellipse at top, oklch(0.78 0.18 145 / 0.18), transparent 60%);
+  --gradient-card: linear-gradient(180deg, oklch(0.21 0.005 250), oklch(0.17 0.004 250));
 }
 
 :root {
   --radius: 1rem;
 
-  /* Dark fitness theme — neon lime accent on deep charcoal */
-  --background: oklch(0.14 0.008 250);
-  --foreground: oklch(0.97 0.005 250);
+  /* Clean monochrome dark theme — off-white accents, no neon */
+  --background: oklch(0.15 0.004 250);
+  --foreground: oklch(0.96 0.003 250);
 
-  --card: oklch(0.19 0.01 250);
-  --card-foreground: oklch(0.97 0.005 250);
+  --card: oklch(0.19 0.005 250);
+  --card-foreground: oklch(0.96 0.003 250);
 
-  --popover: oklch(0.19 0.01 250);
-  --popover-foreground: oklch(0.97 0.005 250);
+  --popover: oklch(0.19 0.005 250);
+  --popover-foreground: oklch(0.96 0.003 250);
 
-  --primary: oklch(0.82 0.19 142);
-  --primary-foreground: oklch(0.16 0.02 145);
+  --primary: oklch(0.95 0.003 250);
+  --primary-foreground: oklch(0.16 0.005 250);
 
-  --secondary: oklch(0.24 0.012 250);
-  --secondary-foreground: oklch(0.97 0.005 250);
+  --secondary: oklch(0.24 0.005 250);
+  --secondary-foreground: oklch(0.96 0.003 250);
 
-  --muted: oklch(0.22 0.01 250);
-  --muted-foreground: oklch(0.65 0.02 250);
+  --muted: oklch(0.23 0.005 250);
+  --muted-foreground: oklch(0.62 0.01 250);
 
-  --accent: oklch(0.26 0.015 250);
-  --accent-foreground: oklch(0.97 0.005 250);
+  --accent: oklch(0.26 0.006 250);
+  --accent-foreground: oklch(0.96 0.003 250);
 
-  --destructive: oklch(0.65 0.22 25);
+  --destructive: oklch(0.6 0.14 25);
   --destructive-foreground: oklch(0.98 0 0);
 
-  --border: oklch(0.26 0.012 250);
-  --input: oklch(0.22 0.012 250);
-  --ring: oklch(0.82 0.19 142);
+  --border: oklch(0.27 0.005 250);
+  --input: oklch(0.22 0.005 250);
+  --ring: oklch(0.7 0.005 250);
 
-  --calories: oklch(0.82 0.19 142);
-  --protein: oklch(0.72 0.18 25);
-  --carbs: oklch(0.78 0.17 75);
-  --fat: oklch(0.7 0.18 280);
+  /* Muted, refined macro tones (no neon) */
+  --calories: oklch(0.92 0.004 250);
+  --protein: oklch(0.72 0.09 25);
+  --carbs: oklch(0.78 0.08 75);
+  --fat: oklch(0.72 0.06 280);
 }
 
 @layer base {
@@ -104,17 +102,8 @@
 }
 
 @layer utilities {
-  .gradient-hero {
-    background-image: var(--gradient-hero);
-  }
-  .gradient-primary {
-    background-image: var(--gradient-primary);
-  }
   .gradient-card {
     background-image: var(--gradient-card);
-  }
-  .shadow-glow {
-    box-shadow: var(--shadow-glow);
   }
   .shadow-card {
     box-shadow: var(--shadow-card);
