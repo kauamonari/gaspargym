@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronRight, TrendingUp } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { SurfaceCard } from "@/components/SurfaceCard";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 import {
   DEFAULT_PROFILE,
   MEAL_TYPES,
@@ -16,20 +18,27 @@ export const Route = createFileRoute("/days")({
   head: () => ({
     meta: [
       { title: "FitDiet — Dias" },
-      { name: "description", content: "Compare suas calorias e macros dos dias anteriores." },
+      { name: "description", content: "Calendário com suas calorias e macros dos dias anteriores." },
     ],
   }),
   component: DaysPage,
 });
 
 function dayKey(d: Date) {
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function DaysPage() {
   const [meals, setMeals] = useState<Meal[]>([]);
   const [profile, setProfile] = useState<Profile>(DEFAULT_PROFILE);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Date>(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
 
   useEffect(() => {
     setMeals(storage.get<Meal[]>(STORAGE_KEYS.meals, []));
@@ -38,32 +47,41 @@ function DaysPage() {
 
   const goals = calcMacroGoals(profile);
 
-  const days = useMemo(() => {
-    const out: { key: string; date: Date; meals: Meal[] }[] = [];
-    for (let i = 0; i < 30; i++) {
-      const d = new Date();
-      d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() - i);
-      const k = dayKey(d);
-      const dayMeals = meals.filter((m) => m.date.slice(0, 10) === k);
-      out.push({ key: k, date: d, meals: dayMeals });
+  const byDay = useMemo(() => {
+    const map = new Map<string, Meal[]>();
+    for (const m of meals) {
+      const k = m.date.slice(0, 10);
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(m);
     }
-    return out;
+    return map;
   }, [meals]);
 
-  const recorded = days.filter((d) => d.meals.length > 0);
-  const avg = recorded.length
-    ? Math.round(recorded.reduce((s, d) => s + sumMeals(d.meals).calorias, 0) / recorded.length)
+  const recordedDates = useMemo(
+    () => Array.from(byDay.keys()).map((k) => new Date(k + "T00:00:00")),
+    [byDay],
+  );
+
+  const recordedTotals = useMemo(
+    () =>
+      Array.from(byDay.values()).map((items) => sumMeals(items).calorias),
+    [byDay],
+  );
+  const avg = recordedTotals.length
+    ? Math.round(recordedTotals.reduce((a, b) => a + b, 0) / recordedTotals.length)
     : 0;
 
-  const selectedDay = selected ? days.find((d) => d.key === selected) : null;
+  const selectedKey = dayKey(selected);
+  const selectedMeals = byDay.get(selectedKey) ?? [];
+  const selectedTotals = sumMeals(selectedMeals);
+  const diff = selectedTotals.calorias - goals.calorias;
 
   return (
     <div className="space-y-6 animate-slide-up">
       <header className="flex items-start justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Histórico</p>
-          <h1 className="font-display text-3xl font-bold">Dias</h1>
+          <h1 className="font-display text-3xl font-bold">Calendário</h1>
         </div>
         <Link
           to="/progress"
@@ -75,7 +93,9 @@ function DaysPage() {
 
       <SurfaceCard className="flex items-end justify-between">
         <div>
-          <p className="text-xs uppercase tracking-wider text-muted-foreground">Média ({recorded.length} dias)</p>
+          <p className="text-xs uppercase tracking-wider text-muted-foreground">
+            Média ({recordedTotals.length} dias)
+          </p>
           <p className="font-display text-4xl font-bold tabular-nums">
             {avg}
             <span className="ml-1 text-sm font-medium text-muted-foreground">kcal</span>
@@ -89,107 +109,93 @@ function DaysPage() {
         </div>
       </SurfaceCard>
 
-      <section className="space-y-2">
-        <h2 className="font-display text-lg font-semibold">Últimos 30 dias</h2>
-        <ul className="space-y-2">
-          {days.map((d) => {
-            const totals = sumMeals(d.meals);
-            const pct = Math.min((totals.calorias / Math.max(goals.calorias, 1)) * 100, 100);
-            const diff = totals.calorias - goals.calorias;
-            const isToday = d.key === dayKey(new Date());
-            const isOpen = selected === d.key;
-            return (
-              <li key={d.key}>
-                <button
-                  onClick={() => setSelected(isOpen ? null : d.key)}
-                  className="w-full text-left"
+      <SurfaceCard className="px-2 py-3">
+        <Calendar
+          mode="single"
+          selected={selected}
+          onSelect={(d) => d && setSelected(d)}
+          disabled={(date) => date > new Date()}
+          modifiers={{ recorded: recordedDates }}
+          modifiersClassNames={{
+            recorded:
+              "relative after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:h-1 after:w-1 after:rounded-full after:bg-foreground/70",
+          }}
+          showOutsideDays
+          className={cn("p-2 pointer-events-auto mx-auto bg-transparent")}
+        />
+        <div className="mt-2 flex items-center justify-center gap-4 text-[10px] uppercase tracking-wider text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-foreground/70" /> com registro
+          </span>
+        </div>
+      </SurfaceCard>
+
+      <SurfaceCard className="space-y-4">
+        <div className="flex items-end justify-between">
+          <div>
+            <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
+              {selected.toLocaleDateString("pt-BR", {
+                weekday: "long",
+                day: "2-digit",
+                month: "long",
+              })}
+            </p>
+            <p className="font-display text-3xl font-bold tabular-nums">
+              {selectedTotals.calorias}
+              <span className="ml-1 text-sm font-medium text-muted-foreground">
+                / {goals.calorias} kcal
+              </span>
+            </p>
+          </div>
+          {selectedMeals.length > 0 && (
+            <span
+              className={cn(
+                "rounded-full border px-3 py-1 text-xs font-semibold tabular-nums",
+                diff > 0
+                  ? "border-destructive/40 text-destructive"
+                  : "border-border text-muted-foreground",
+              )}
+            >
+              {diff > 0 ? "+" : ""}
+              {diff} kcal
+            </span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          <MacroPill label="Proteína" value={selectedTotals.proteina} goal={goals.proteina} color="protein" />
+          <MacroPill label="Carbo" value={selectedTotals.carbo} goal={goals.carbo} color="carbs" />
+          <MacroPill label="Gordura" value={selectedTotals.gordura} goal={goals.gordura} color="fat" />
+        </div>
+
+        {selectedMeals.length > 0 ? (
+          <ul className="space-y-1.5 border-t border-border/60 pt-3">
+            {MEAL_TYPES.map((t) => {
+              const items = selectedMeals.filter((m) => m.mealType === t.id);
+              if (items.length === 0) return null;
+              const s = sumMeals(items);
+              return (
+                <li
+                  key={t.id}
+                  className="flex items-center justify-between rounded-lg bg-background/40 px-3 py-2 text-sm"
                 >
-                  <SurfaceCard className="space-y-3 transition-colors hover:border-border">
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-display text-base font-semibold capitalize">
-                          {isToday
-                            ? "Hoje"
-                            : d.date.toLocaleDateString("pt-BR", {
-                                weekday: "short",
-                                day: "2-digit",
-                                month: "short",
-                              })}
-                        </p>
-                        <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                          {d.meals.length === 0
-                            ? "Sem registros"
-                            : `${d.meals.length} ${d.meals.length === 1 ? "item" : "itens"}`}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="text-right">
-                          <p className="font-display text-lg font-bold tabular-nums">
-                            {totals.calorias}
-                          </p>
-                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                            {d.meals.length > 0
-                              ? `${diff > 0 ? "+" : ""}${diff} vs meta`
-                              : `meta ${goals.calorias}`}
-                          </p>
-                        </div>
-                        <ChevronRight
-                          className={`h-4 w-4 text-muted-foreground transition-transform ${
-                            isOpen ? "rotate-90" : ""
-                          }`}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="h-full rounded-full bg-foreground/80 transition-[width] duration-500"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-
-                    {isOpen && (
-                      <div className="space-y-2 border-t border-border/60 pt-3">
-                        <div className="grid grid-cols-3 gap-2 text-center">
-                          <MacroPill label="P" value={totals.proteina} goal={goals.proteina} color="protein" />
-                          <MacroPill label="C" value={totals.carbo} goal={goals.carbo} color="carbs" />
-                          <MacroPill label="G" value={totals.gordura} goal={goals.gordura} color="fat" />
-                        </div>
-                        {d.meals.length > 0 ? (
-                          <ul className="space-y-1">
-                            {MEAL_TYPES.map((t) => {
-                              const items = d.meals.filter((m) => m.mealType === t.id);
-                              if (items.length === 0) return null;
-                              const s = sumMeals(items);
-                              return (
-                                <li
-                                  key={t.id}
-                                  className="flex items-center justify-between rounded-lg bg-background/40 px-3 py-2 text-xs"
-                                >
-                                  <span className="text-muted-foreground">
-                                    {t.emoji} {t.label}
-                                  </span>
-                                  <span className="tabular-nums">{s.calorias} kcal</span>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        ) : (
-                          <p className="py-2 text-center text-xs text-muted-foreground">
-                            Nenhuma refeição registrada neste dia.
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </SurfaceCard>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
-
-      {selectedDay && null}
+                  <span className="text-muted-foreground">
+                    {t.emoji} {t.label}
+                    <span className="ml-2 text-[11px]">
+                      · {items.length} {items.length === 1 ? "item" : "itens"}
+                    </span>
+                  </span>
+                  <span className="font-semibold tabular-nums">{s.calorias} kcal</span>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <p className="border-t border-border/60 pt-4 text-center text-sm text-muted-foreground">
+            Nenhum registro neste dia.
+          </p>
+        )}
+      </SurfaceCard>
     </div>
   );
 }
@@ -211,13 +217,20 @@ function MacroPill({
       : color === "carbs"
         ? "var(--color-carbs)"
         : "var(--color-fat)";
+  const pct = Math.min((value / Math.max(goal, 1)) * 100, 100);
   return (
-    <div className="rounded-lg bg-background/40 px-2 py-1.5">
+    <div className="space-y-1.5 rounded-lg bg-background/40 px-3 py-2">
       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="text-xs font-semibold tabular-nums" style={{ color: colorVar }}>
+      <p className="text-sm font-semibold tabular-nums" style={{ color: colorVar }}>
         {value.toFixed(0)}
         <span className="text-muted-foreground"> / {goal}g</span>
       </p>
+      <div className="h-1 overflow-hidden rounded-full bg-muted">
+        <div
+          className="h-full rounded-full transition-[width] duration-500"
+          style={{ width: `${pct}%`, backgroundColor: colorVar }}
+        />
+      </div>
     </div>
   );
 }
