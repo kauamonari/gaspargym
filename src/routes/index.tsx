@@ -18,7 +18,7 @@ import { calcMacroGoals, isSameDay, sumMeals } from "@/utils/nutrition";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "FitDiet — Hoje" },
+      { title: "Gaspar gym— Hoje" },
       { name: "description", content: "Suas calorias e macros de hoje em um único lugar." },
     ],
   }),
