@@ -42,7 +42,7 @@ if (hasIndexHtml(CURRENT_WEBDIR)) {
 
 console.log(`⚠️  "${CURRENT_WEBDIR}" não tem index.html. Procurando a pasta certa...`);
 
-const candidates = ["dist", ".output", "build", "out"];
+const candidates = ["dist", ".output", "build", "out", ".vinxi", ".nitro", ".vercel", "public"];
 let found = null;
 for (const c of candidates) {
   found = findClientDir(c);
@@ -50,7 +50,25 @@ for (const c of candidates) {
 }
 
 if (!found) {
-  console.error("❌ Não encontrei nenhuma pasta de build com index.html. Rode `npm run build` antes.");
+  console.error("❌ Não encontrei nenhuma pasta de build com index.html nos candidatos conhecidos.");
+  console.error("📂 Estrutura da raiz do projeto após o build (excluindo node_modules):");
+  function printTree(dir, prefix = "", depth = 0) {
+    if (depth > 3) return;
+    let entries;
+    try {
+      entries = readdirSync(dir);
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (entry === "node_modules" || entry === ".git") continue;
+      const full = join(dir, entry);
+      const isDir = statSync(full).isDirectory();
+      console.error(`${prefix}${entry}${isDir ? "/" : ""}`);
+      if (isDir) printTree(full, prefix + "  ", depth + 1);
+    }
+  }
+  printTree(".");
   process.exit(1);
 }
 
