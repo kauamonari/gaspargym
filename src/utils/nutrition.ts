@@ -1,5 +1,6 @@
 import type { Food } from "@/data/foods";
 import type { Profile, Meal } from "@/storage/storage";
+import { isSameLocalDay } from "@/utils/date";
 
 export function calcMealFromFood(food: Food, gramas: number) {
   const factor = gramas / food.gramas;
@@ -45,5 +46,5 @@ export function sumMeals(meals: Meal[]) {
 }
 
 export function isSameDay(a: string, b: string) {
-  return a.slice(0, 10) === b.slice(0, 10);
+  return isSameLocalDay(a, b);
 }

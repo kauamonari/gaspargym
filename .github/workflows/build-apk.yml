@@ -1,0 +1,53 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependências
+        run: npm install --legacy-peer-deps
+
+      - name: Build do app (web)
+        run: npm run build
+
+      - name: Conferir/corrigir pasta de assets do Capacitor
+        run: npm run cap:resolve-webdir
+
+      - name: Adicionar plataforma Android
+        run: npx cap add android
+
+      - name: Sincronizar assets com o projeto Android
+        run: npx cap sync android
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Configurar Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Gerar o APK (debug)
+        working-directory: android
+        run: chmod +x gradlew && ./gradlew assembleDebug --stacktrace
+
+      - name: Publicar o APK gerado
+        uses: actions/upload-artifact@v4
+        with:
+          name: gaspargym-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

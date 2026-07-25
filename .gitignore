@@ -20,6 +20,10 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Capacitor (gerado automaticamente pelo workflow de build do APK)
+android/
+ios/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -25,6 +25,8 @@ export const STORAGE_KEYS = {
   meals: "fitdiet:meals",
   weights: "fitdiet:weights",
   profile: "fitdiet:profile",
+  workoutSets: "fitdiet:workoutSets",
+  workoutBlocks: "fitdiet:workoutBlocks",
 } as const;
 
 export type MealType = "cafe_manha" | "almoco" | "cafe_tarde" | "janta" | "ceia";
@@ -74,3 +76,27 @@ export const DEFAULT_PROFILE: Profile = {
   sexo: "M",
   objetivo: "manutencao",
 };
+
+export interface WorkoutSet {
+  id: string;
+  exerciseId?: number;
+  exerciseName: string;
+  carga: number; // kg
+  reps: number;
+  date: string; // ISO
+  blockId?: string;
+  blockLabel?: string;
+  custom?: boolean;
+}
+
+export interface WorkoutBlock {
+  id: string;
+  label: string;
+  exerciseIds: number[];
+}
+
+export const DEFAULT_WORKOUT_BLOCKS: WorkoutBlock[] = [
+  { id: "treino-a", label: "Treino A", exerciseIds: [] },
+  { id: "treino-b", label: "Treino B", exerciseIds: [] },
+  { id: "treino-c", label: "Treino C", exerciseIds: [] },
+];
